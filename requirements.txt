@@ -1,0 +1,7 @@
+certifi==2023.7.22
+charset-normalizer==3.3.0
+idna==3.4
+-e git+https://github.com/pnowosie/ifirma-api.git@d5a5add002bb0d8b1da1f227aaed93b6c6b77d52#egg=pnowosie.ifirma_api
+PyYAML==6.0.1
+requests==2.31.0
+urllib3==2.0.6
