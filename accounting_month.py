@@ -23,9 +23,11 @@ from ifirma.request import Request, API_URL
 INFO_RE = re.compile(r"Zmieniono miesiąc księgowy na (\d+)-(\d{4}).")
 
 # Actions
-GET  = "GET"
+GET = "GET"
 PREV = "PREV"
 NEXT = "NEXT"
+
+
 def call_ifirma(what):
     req = Request(api_key_name="abonent", api_key=os.environ.get("IFIRMA_abonent_API_KEY"))
     req.url = f"{API_URL}/abonent/miesiacksiegowy.json"
@@ -48,9 +50,10 @@ def call_ifirma(what):
 
     resp.raise_for_status()
 
-    return resp.json()
+    return parse_response(what, resp.json())
 
-def parse_response(direction, json_resp):
+
+def parse_response(what, json_resp):
     """
     Example responses:
      - `{'response': {'RokKsiegowy': 2023, 'MiesiacKsiegowy': 10}}`
@@ -63,7 +66,7 @@ def parse_response(direction, json_resp):
         raise ValueError("Invalid response")
     retcode = resp.get("Kod", 0)
     success = retcode == 0
-    action = direction
+    action = what
     if info := INFO_RE.match(resp.get("Informacja", "")):
         month, year = map(int, info.groups())
     else:
@@ -76,27 +79,31 @@ def parse_response(direction, json_resp):
 
     return ret
 
-if __name__ == "__main__":
-    direction = sys.argv[1] if len(sys.argv) > 1 else None
-    if direction == "next" or direction == "+1":
-        direction = NEXT
-    elif direction == "prev" or direction == "-1":
-        direction = PREV
-    elif direction == "auto":
-        # This will push month forward only of there is a need to do so
-        now = datetime.datetime.now()
-        actual = parse_response(GET, call_ifirma(GET))
-        if not actual["success"]:
-            raise ValueError("Failed to get current accounting month")
-        if actual["month"] == now.month and actual["year"] == now.year:
-            print(f"Current accounting month is correct {now.month}/{now.year}")
-            direction = GET
-        else:
-            print(f"Auto-correcting actual accounting month from {actual['month']}/{actual['year']} to {now.month}/{now.year}")
+
+def parse_args():
+    match sys.argv[1] if len(sys.argv) > 1 else None:
+        case "next" | "+1":
             direction = NEXT
-    else:
-        direction = GET
+        case "prev" | "-1":
+            direction = PREV
+        case "auto":
+            # This will push month forward only of there is a need to do so
+            now = datetime.datetime.now()
+            actual = call_ifirma(GET)
+            if not actual["success"]:
+                raise ValueError("Failed to get current accounting month")
 
-    resp = call_ifirma(direction)
-    print(parse_response(direction, resp))
+            if actual["month"] == now.month and actual["year"] == now.year:
+                print(f"Current accounting month is correct {now.month}/{now.year}")
+                direction = GET
+            else:
+                print(f"Auto-correcting actual accounting month from {actual['month']}/{actual['year']} to {now.month}/{now.year}")
+                direction = NEXT
+        case _:
+            direction = GET
 
+    return direction
+
+
+if __name__ == "__main__":
+    print(call_ifirma(parse_args()))
