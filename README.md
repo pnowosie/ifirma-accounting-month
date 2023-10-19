@@ -1,6 +1,14 @@
 # iFirma accounting month
 
-This little tool helps me set the accounting month at the beginning of the calendar month to assert other systems work without distruptions.
+This little tool helps me set the accounting month at the beginning of the calendar month to assert other systems work without disruptions.
+
+## Installation
+
+```bash
+git clone https://github.com/pnowosie/ifirma-accounting-month.git
+cd ifirma-accounting-month
+make install
+```
 
 ## Usage
 
@@ -18,4 +26,6 @@ iFirma API calls
 
 How-To
   help             display this helpful message
+  clean            cleaning secrets & python virtual environment
+  install          creates & install dependencies, prepares enviroment variables
 ```

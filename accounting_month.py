@@ -91,7 +91,7 @@ def parse_args():
             now = datetime.datetime.now()
             actual = call_ifirma(GET)
             if not actual["success"]:
-                raise ValueError("Failed to get current accounting month")
+                return GET
 
             if actual["month"] == now.month and actual["year"] == now.year:
                 print(f"Current accounting month is correct {now.month}/{now.year}")
