@@ -27,11 +27,11 @@ clean: ## cleaning secrets & python virtual environment
 	rm -rf .venv .env
 
 install: ## creates & install dependencies, prepares enviroment variables
-	echo "Creating venv for Python $$(${PYBIN} -V)"
-	${PYBIN} -m venv .venv
-	.venv/bin/pip install -r requirements.txt
-	cp env.template .env0
+	@echo "Creating venv for Python $$(${PYBIN} -V)"
+	@${PYBIN} -m venv .venv
+	@.venv/bin/pip install -r requirements.txt
+	@cp env.template .env0
 	${EDITOR} .env0
-	sed -e '/^[ \t]*#/d' -e '/^$/d' .env0 > .env
-	rm .env0
-	echo "✅ You're all set 👍\nNow try: make check"
+	@sed -e '/^[ \t]*#/d' -e '/^$$/d' .env0 > .env
+	@rm .env0
+	@echo "✅ You're all set 👍\nNow try: make check"
