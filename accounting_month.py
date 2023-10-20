@@ -13,28 +13,29 @@ Set env variable of name `IFIRMA_abonent_API_KEY` with the value
 of the appropriate key.
 
 USAGE: Follow the instructions in the Makefile.
-Run `make` to check out you options.
+Run `make` to check out your options.
 
 """
 import datetime, json, os, re, requests, sys
 import logging
 
+from enum import Enum
+from typing import Any
 from ifirma.request import Request, API_URL
 
 INFO_RE = re.compile(r"Zmieniono miesiąc księgowy na (\d+)-(\d{4}).")
 
-# Actions
-GET = "GET"
-PREV = "PREV"
-NEXT = "NEXT"
+# Possible actions. of `call_ifirma` function
+Action = Enum('Action', ['GET', 'PREV', 'NEXT'])
 
 
-def call_ifirma(what):
+def call_ifirma(what: Action) -> dict[str, int | Any]:
+    """Gets or sets accounting month in ifirma service."""
     req = Request(api_key_name="abonent", api_key=os.environ.get("IFIRMA_abonent_API_KEY"))
     req.url = f"{API_URL}/abonent/miesiacksiegowy.json"
 
-    if what != GET:
-        direction = "NAST" if what == NEXT else "POPRZ"
+    if what != Action.GET:
+        direction = "NAST" if what == Action.NEXT else "POPRZ"
 
         # Here the PUT request method is used.
         # Because `req.execute` only supports GET / POST requests
@@ -54,8 +55,10 @@ def call_ifirma(what):
     return parse_response(what, resp.json())
 
 
-def parse_response(what, json_resp):
+def parse_response(what: Action, json_resp: dict[str, int | Any]) -> dict[str, int | Any]:
     """
+    Internal use. Parses response from ifirma service, see return of `call_ifirma` function.
+
     Example responses:
      - `{'response': {'RokKsiegowy': 2023, 'MiesiacKsiegowy': 10}}`
      - `{'response': {'Kod': 0, 'Informacja': 'Zmieniono miesiąc księgowy na 9-2023.'}}`
@@ -75,34 +78,35 @@ def parse_response(what, json_resp):
         month = resp.get("MiesiacKsiegowy", 0)
         year = resp.get("RokKsiegowy", 0)
 
-    ret = dict(success=success, action=action, month=month, year=year, retcode=retcode)
+    ret = dict(success=success, action=str(action), month=month, year=year, retcode=retcode)
     if info := resp.get("Informacja"):
         ret["info"] = info
 
     return ret
 
 
-def parse_args():
+def parse_args() -> Action:
+    """Parses command-line arguments passed to script."""
     match sys.argv[1] if len(sys.argv) > 1 else None:
         case "next" | "+1":
-            direction = NEXT
+            direction = Action.NEXT
         case "prev" | "-1":
-            direction = PREV
+            direction = Action.PREV
         case "auto":
             # This will push month forward only of there is a need to do so
             now = datetime.datetime.now()
-            actual = call_ifirma(GET)
+            actual = call_ifirma(Action.GET)
             if not actual["success"]:
-                return GET
+                return Action.GET
 
             if actual["month"] == now.month and actual["year"] == now.year:
                 logging.info(f"Current accounting month is correct {now.month}/{now.year}")
-                direction = GET
+                direction = Action.GET
             else:
                 logging.info(f"Auto-correcting actual accounting month from {actual['month']}/{actual['year']} to {now.month}/{now.year}")
-                direction = NEXT
+                direction = Action.NEXT
         case _:
-            direction = GET
+            direction = Action.GET
 
     return direction
 
