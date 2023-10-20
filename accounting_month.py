@@ -17,6 +17,7 @@ Run `make` to check out you options.
 
 """
 import datetime, json, os, re, requests, sys
+import logging
 
 from ifirma.request import Request, API_URL
 
@@ -63,6 +64,7 @@ def parse_response(what, json_resp):
 
     resp = json_resp.get("response")
     if not resp:
+        logging.error(f"Unsupported response: {json_resp}")
         raise ValueError("Invalid response")
     retcode = resp.get("Kod", 0)
     success = retcode == 0
@@ -94,10 +96,10 @@ def parse_args():
                 return GET
 
             if actual["month"] == now.month and actual["year"] == now.year:
-                print(f"Current accounting month is correct {now.month}/{now.year}")
+                logging.info(f"Current accounting month is correct {now.month}/{now.year}")
                 direction = GET
             else:
-                print(f"Auto-correcting actual accounting month from {actual['month']}/{actual['year']} to {now.month}/{now.year}")
+                logging.info(f"Auto-correcting actual accounting month from {actual['month']}/{actual['year']} to {now.month}/{now.year}")
                 direction = NEXT
         case _:
             direction = GET
@@ -106,4 +108,8 @@ def parse_args():
 
 
 if __name__ == "__main__":
-    print(call_ifirma(parse_args()))
+    logging.basicConfig(
+        level=logging.INFO,
+        format='%(asctime)s [%(levelname)s]:\t%(message)s'
+    )
+    logging.info(call_ifirma(parse_args()))
