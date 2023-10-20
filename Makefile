@@ -2,7 +2,7 @@
 
 .DEFAULT_GOAL := help
 PYTHON := .venv/bin/python
-PYBIN := $$(which python3)
+PYBIN := "python3"
 
 .PHONY: help check previous next adjust
 
